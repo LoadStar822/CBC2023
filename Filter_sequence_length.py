@@ -20,8 +20,12 @@ if not os.path.exists(filtered_dir):
 for root, dirs, files in os.walk(pdb_dir):
     for pdb_file in files:
         if pdb_file.endswith(".ent"):
-            # 使用解析器读取PDB文件
-            structure = parser.get_structure(pdb_file[:-4], os.path.join(root, pdb_file))
+            try:
+                # 使用解析器读取PDB文件
+                structure = parser.get_structure(pdb_file[:-4], os.path.join(root, pdb_file))
+            except Exception as e:
+                print(f"Error while parsing {pdb_file}: {e}")
+                continue
 
             # 从结构中提取氨基酸序列
             moved = False
