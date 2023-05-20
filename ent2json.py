@@ -21,6 +21,13 @@ for filename in glob.glob(ent_files_path):
     data = {}
 
     new_filename = os.path.join(json_path, pdbid + '.dssp')
+
+    json_filename = new_filename.replace('.dssp', '.json')
+    if os.path.isfile(json_filename):
+        print(f"Skipping {filename} as {json_filename} already exists.")
+        continue
+
+    print(f"Processing {filename}")
     call([dssp_path, "-i", fn_ent, "-o", new_filename])
 
     if not os.path.isfile(new_filename):
@@ -50,6 +57,5 @@ for filename in glob.glob(ent_files_path):
             'z': int(float(line[129:136]))
         }
 
-    new_filename = new_filename.replace('.dssp', '.json')
-    with open(new_filename, "w") as file:
+    with open(json_filename, "w") as file:
         file.write(json.dumps(data))
