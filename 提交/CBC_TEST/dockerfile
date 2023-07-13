@@ -1,0 +1,56 @@
+# 基于的基础镜像
+FROM python:3.9.17
+
+# 设置 /code 文件夹是工作目录
+WORKDIR /code
+
+# 更新系统及安装必要的工具
+RUN apt-get update -y && apt-get install -y \
+    build-essential \
+    cmake \
+    wget \
+    unzip \
+    git \
+    gcc \
+    g++ \
+	libeigen3-dev
+
+# 安装libcif++
+RUN git clone https://github.com/PDB-REDO/libcifpp.git --recurse-submodules libcifpp && \
+    cd libcifpp && \
+    cmake -S . -B build -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release && \
+    cmake --build build && \
+    cmake --install build && \
+    cd .. && \
+    rm -rf libcifpp
+
+# 安装libmcfp
+RUN git clone https://github.com/mhekkel/libmcfp.git libmcfp && \
+    cd libmcfp && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    cmake --build . && \
+    cmake --install . && \
+    cd ../.. && \
+    rm -rf libmcfp
+
+# 安装mkdssp
+RUN git clone https://github.com/PDB-REDO/dssp.git dssp && \
+    cd dssp && \
+    mkdir build && \
+    cd build && \
+    cmake -S .. -B . -DCMAKE_BUILD_TYPE=Release && \
+    cmake --build . && \
+    cmake --install . && \
+    cd ../..
+
+# 将项目的 requirements.txt 文件复制到容器的 /code 目录下
+COPY requirements.txt .
+
+# 安装支持
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
+
+# 将自己的项目文件复制到容器的 /code 目录下
+COPY . .

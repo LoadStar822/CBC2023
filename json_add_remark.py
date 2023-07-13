@@ -51,5 +51,4 @@ def process_dir(ent_dir, json_dir):
         if os.path.exists(json_path):
             add_remark_to_json(json_path, remark_dict)
 
-
 process_dir(r'D:\BaiduNetdiskDownload\SCOPe\filter_hydrogen', r'D:\BaiduNetdiskDownload\SCOPe\json')

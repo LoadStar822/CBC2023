@@ -41,20 +41,20 @@ for filename in glob.glob(ent_files_path):
         data.setdefault('model', {})[idx] = {
             'res': line[13:14],
             'ss': line[16:17],
-            'acc': int(float(line[34:38])),
-            'nho0p': int(float(line[39:45])),
-            'nho0e': int(float(line[46:50])),
-            'ohn0p': int(float(line[50:56])),
-            'ohn0e': int(float(line[57:61])),
-            'nho1p': int(float(line[61:67])),
-            'nho1e': int(float(line[68:72])),
-            'ohn1p': int(float(line[72:78])),
-            'ohn1e': int(float(line[79:83])),
-            'phi': int(float(line[103:109])),
-            'psi': int(float(line[109:115])),
-            'x': int(float(line[115:122])),
-            'y': int(float(line[122:129])),
-            'z': int(float(line[129:136]))
+            'acc': float(line[34:38]),
+            'nho0p': float(line[39:45]),
+            'nho0e': float(line[46:50]),
+            'ohn0p': float(line[50:56]),
+            'ohn0e': float(line[57:61]),
+            'nho1p': float(line[61:67]),
+            'nho1e': float(line[68:72]),
+            'ohn1p': float(line[72:78]),
+            'ohn1e': float(line[79:83]),
+            'phi': float(line[103:109]),
+            'psi': float(line[109:115]),
+            'x': float(line[115:122]),
+            'y': float(line[122:129]),
+            'z': float(line[129:136])
         }
 
     with open(json_filename, "w") as file:

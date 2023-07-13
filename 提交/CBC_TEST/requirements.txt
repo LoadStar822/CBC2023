@@ -1,0 +1,7 @@
+Bio==1.5.9
+biopython==1.81
+numpy==1.25.0
+scipy==1.11.1
+torch==2.0.1
+transformers==4.24.0
+sentencepiece==0.1.99

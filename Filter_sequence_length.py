@@ -9,8 +9,8 @@ parser = PDBParser()
 ppb = PPBuilder()
 
 # 指定你的PDB文件目录和过滤后的目录
-pdb_dir = "D:/BaiduNetdiskDownload/SCOPe/pdbstyle-2.08"
-filtered_dir = "D:/BaiduNetdiskDownload/SCOPe/filter"
+pdb_dir = "D:/BaiduNetdiskDownload/alphafold"
+filtered_dir = "D:/BaiduNetdiskDownload/alphafold_filter"
 
 # 如果过滤后的目录不存在，创建它
 if not os.path.exists(filtered_dir):
@@ -19,7 +19,7 @@ if not os.path.exists(filtered_dir):
 # 递归遍历目录及其所有子目录中的文件
 for root, dirs, files in os.walk(pdb_dir):
     for pdb_file in files:
-        if pdb_file.endswith(".ent"):
+        if pdb_file.endswith(".pdb"):
             try:
                 # 使用解析器读取PDB文件
                 structure = parser.get_structure(pdb_file[:-4], os.path.join(root, pdb_file))

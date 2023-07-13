@@ -17,14 +17,15 @@ def write_fasta_from_pdb(pdb_file, fasta_file):
 
     # 保存为FASTA文件
     record = SeqRecord(Seq(str(sequence)),
-                       id=os.path.basename(pdb_file).replace('.ent', ''),
+                       id=os.path.basename(pdb_file).replace('.pdb', ''),
                        description="")
     with open(fasta_file, "w") as output_handle:
-        SeqIO.write(record, output_handle, "fasta")
+        SeqIO.write(record, output_handle, "fasta-2line")
 
 
-ent_dir = 'D:\\BaiduNetdiskDownload\\SCOPe\\filter'
-fasta_dir = 'D:\\BaiduNetdiskDownload\\SCOPe\\filter_fasta'
+
+ent_dir = 'D:\\BaiduNetdiskDownload\\SCOPe\\filter_hydrogen'
+fasta_dir = 'D:\\BaiduNetdiskDownload\\SCOPe\\filter_hydrogen_fasta'
 
 # 列出所有的.ent文件
 ent_files = [f for f in os.listdir(ent_dir) if f.endswith('.ent')]
