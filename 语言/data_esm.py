@@ -172,7 +172,7 @@ ontology12 = np.zeros([size1, size2], dtype=bool)
 ontology23 = np.zeros([size2, size3], dtype=bool)
 print('#size:', len(scop))
 
-print('#building contactlib data ...')
+print('#building ESMC data ...')
 data = []
 
 for pdbid in tqdm(sorted(scop.keys(), key=lambda k: len(scop[k]['model']))):

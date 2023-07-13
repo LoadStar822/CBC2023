@@ -10,10 +10,11 @@ import os
 import re
 import warnings
 from glob import glob
-
+# pip install fair-esm
+import esm
 from transformers import T5Config, T5Tokenizer, T5EncoderModel
 from transformers.utils import logging
-
+from ESMC.model import *
 from ESMC.bin.scope import process_file
 from ESMC.data import *
 
@@ -40,34 +41,39 @@ newPath = filePath.split(".")[0] + "." + "json"
 fileList = glob(newPath)
 predictions, strId = [], []
 computeDevice = pt.device('cuda:0' if pt.cuda.is_available() else 'cpu')
-modelDirectory = "ESMC/model/prot_t5_xl_uniref50"
-configModel = T5Config.from_pretrained(modelDirectory)
-tokenizer = T5Tokenizer.from_pretrained(modelDirectory)
-modelEncode = T5EncoderModel.from_pretrained(modelDirectory,
-                                             config=configModel,
-                                             ignore_mismatched_sizes=True).to(computeDevice)
+model_path = "ESMC/model/esm2_t36_3B_UR50D.pt"
+model_lm, alphabet = esm.pretrained.load_model_and_alphabet_local(model_path)
+batch_converter = alphabet.get_batch_converter()
+model_lm.eval()  # disables dropout for deterministic results
+# configModel = T5Config.from_pretrained(modelDirectory)
+# tokenizer = T5Tokenizer.from_pretrained(modelDirectory)
+# modelEncode = T5EncoderModel.from_pretrained(modelDirectory,
+#                                              config=configModel,
+#                                              ignore_mismatched_sizes=True).to(computeDevice)
+emd_length = 7560
 
+def getEmbedding(sequence):
+    sequences = [("protein1", sequence)]
+    batch_labels, batch_strs, batch_tokens = batch_converter(sequences)
+    batch_lens = (batch_tokens != alphabet.padding_idx).sum(1)
+    layers_of_interest = [12, 24, 36]
 
-def getEmbedding(sequence, model, tokenizer):
-    length = len(sequence)
-    sequence = [sequence]
-    sequence = [" ".join(list(re.sub(r"[UZOB]", "X", sequenceVal))) for sequenceVal in sequence]
+    with torch.no_grad():
+        results = model_lm(batch_tokens, repr_layers=layers_of_interest, return_contacts=True)
 
-    tokenIds = tokenizer.batch_encode_plus(sequence, add_special_tokens=True, padding="longest")
+    sequence_representations = []
+    for i, tokens_len in enumerate(batch_lens):
+        layer_representations = []
+        for layer in layers_of_interest:
+            token_representations = results["representations"][layer]
+            layer_representations.append(token_representations[i, 1: tokens_len - 1])
+        sequence_representations.append(torch.cat(layer_representations, dim=-1))
 
-    inputIds = pt.tensor(tokenIds['input_ids']).to(computeDevice)
-    attentionMask = pt.tensor(tokenIds['attention_mask']).to(computeDevice)
-
-    with pt.no_grad():
-        embeddingRep = model(input_ids=inputIds, attention_mask=attentionMask)
-    emb = embeddingRep.last_hidden_state[0, :length].mean(dim=0)
-    return emb
-
+    return sequence_representations[0].mean(0)
 
 try:
     for fn in fileList:
         structId = os.path.basename(fn)
-
         with open(fn, 'r') as fileHandle:
             scop = json.load(fileHandle)
         model = scop['model']
@@ -90,7 +96,7 @@ try:
                     frag2[index0, index2] = True
         hbond = [buildContact(model, i, j) for i, j in zip(*np.where(frag2))]
         sequence = scop['sequence']
-        emd = getEmbedding(sequence, modelEncode, tokenizer)
+        emd = getEmbedding(sequence)
         predictions.append(dict(coord=coordinates, hbond=hbond, emd=emd))
         strId.append(structId[:-5])
         os.remove(fn)
@@ -99,7 +105,7 @@ except Exception as e:
 try:
     modelFileName = 'ESMC/model_sav/modelnew_model_augmentation-seqid3-run1.pth'
     pt.cuda.set_device(int(gpuDevice))
-    modelAugment = new_model_augmentation(depth=3, width=1024, multitask=True).cuda()
+    modelAugment = ESMC(depth=3, width=1024, emd_length = emd_length, multitask=True).cuda()
     modelAugment.load_state_dict(pt.load(modelFileName))
     modelAugment.eval()
 

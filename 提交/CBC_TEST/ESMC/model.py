@@ -6,7 +6,6 @@ Desc:
 """
 
 import random
-
 import numpy as np
 import torch as pt
 import torch.nn.functional as F
@@ -102,20 +101,9 @@ class BaseNet(nn.Module):
             return None, None, self.out2(mem), mem
 
 
-class ConvBlock(nn.Module):
-    def __init__(self, cin, cout, dropout=0.1):
-        super(ConvBlock, self).__init__()
-        self.conv = nn.Conv2d(cin, cout, kernel_size=5, stride=2, padding=2)
-        self.norm = nn.LayerNorm(cout)
-        self.act = nn.Sequential(nn.Dropout2d(dropout), nn.ReLU())
-
-    def forward(self, x):
-        return self.act(self.norm(self.conv(x).permute(0, 2, 3, 1)).permute(0, 3, 1, 2))
-
-
-class new_model_augmentation(BaseNet):
-    def __init__(self, depth, width, multitask=True):
-        super(new_model_augmentation, self).__init__(width * 2, multitask=multitask)
+class ESMC(BaseNet):
+    def __init__(self, depth, width, emd_length, multitask=True):
+        super(ESMC, self).__init__(width + emd_length, multitask=multitask)
         assert (width % 64 == 0)
         nhead, ndense = width // 64, width * 4
         self.embed = nn.Sequential(DistBlock(-1),
@@ -123,18 +111,18 @@ class new_model_augmentation(BaseNet):
                                    nn.Linear(ndense, width), nn.LayerNorm(width), nn.ReLU())
         layer_encod = nn.TransformerEncoderLayer(width, nhead, dim_feedforward=ndense, dropout=0.1)
         self.encod = nn.TransformerEncoder(layer_encod, depth)
-        self.emd_attention = nn.Sequential(nn.Linear(width, width),
-                                           nn.Tanh(),
-                                           nn.Linear(width, 1))
+        # self.emd_attention = nn.Sequential(nn.Linear(width, width),
+        #                                    nn.Tanh(),
+        #                                    nn.Linear(width, 1))
 
     def forward(self, x, mask, emd):
         mem = self.encod(self.embed(x).permute(1, 0, 2), src_key_padding_mask=mask).permute(1, 0, 2).masked_fill_(
             mask.unsqueeze(2), 0)
         mem = mem.sum(1) / (mem.size(1) - mask.float().unsqueeze(2).sum(1))
         emd = emd.float()
-        emd_weights = F.softmax(self.emd_attention(emd), dim=0)
-        emd = (emd * emd_weights).sum(0)
-        batch_size = mem.shape[0]
-        emd = emd.unsqueeze(0).expand(batch_size, -1)
+        # emd_weights = F.softmax(self.emd_attention(emd), dim=0)
+        # emd = (emd * emd_weights).sum(0)
+        # batch_size = mem.shape[0]
+        # emd = emd.unsqueeze(0).expand(batch_size, -1)
         mem = pt.cat((mem, emd), 1)
         return super().forward(mem)
