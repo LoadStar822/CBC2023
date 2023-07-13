@@ -3,7 +3,7 @@
 
 from scipy.spatial.distance import squareform
 
-from contactlib.model import *
+from ESMC.model import *
 
 hbondmax = -0.5
 

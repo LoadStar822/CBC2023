@@ -7,14 +7,13 @@ Desc:
 import argparse
 import json
 import os
-import re
 import warnings
 from glob import glob
+
 # pip install fair-esm
 import esm
-from transformers import T5Config, T5Tokenizer, T5EncoderModel
 from transformers.utils import logging
-from ESMC.model import *
+
 from ESMC.bin.scope import process_file
 from ESMC.data import *
 
@@ -52,13 +51,14 @@ model_lm.eval()  # disables dropout for deterministic results
 #                                              ignore_mismatched_sizes=True).to(computeDevice)
 emd_length = 7560
 
+
 def getEmbedding(sequence):
     sequences = [("protein1", sequence)]
     batch_labels, batch_strs, batch_tokens = batch_converter(sequences)
     batch_lens = (batch_tokens != alphabet.padding_idx).sum(1)
     layers_of_interest = [12, 24, 36]
 
-    with torch.no_grad():
+    with pt.no_grad():
         results = model_lm(batch_tokens, repr_layers=layers_of_interest, return_contacts=True)
 
     sequence_representations = []
@@ -67,9 +67,10 @@ def getEmbedding(sequence):
         for layer in layers_of_interest:
             token_representations = results["representations"][layer]
             layer_representations.append(token_representations[i, 1: tokens_len - 1])
-        sequence_representations.append(torch.cat(layer_representations, dim=-1))
+        sequence_representations.append(pt.cat(layer_representations, dim=-1))
 
     return sequence_representations[0].mean(0)
+
 
 try:
     for fn in fileList:
@@ -105,7 +106,7 @@ except Exception as e:
 try:
     modelFileName = 'ESMC/model_sav/modelnew_model_augmentation-seqid3-run1.pth'
     pt.cuda.set_device(int(gpuDevice))
-    modelAugment = ESMC(depth=3, width=1024, emd_length = emd_length, multitask=True).cuda()
+    modelAugment = ESMC(depth=3, width=1024, emd_length=emd_length, multitask=True).cuda()
     modelAugment.load_state_dict(pt.load(modelFileName))
     modelAugment.eval()
 
