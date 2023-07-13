@@ -14,8 +14,8 @@ from glob import glob
 from transformers import T5Config, T5Tokenizer, T5EncoderModel
 from transformers.utils import logging
 
-from contactlib.bin.scope import process_file
-from contactlib.data import *
+from ESMC.bin.scope import process_file
+from ESMC.data import *
 
 warnings.filterwarnings("ignore")
 
@@ -26,7 +26,7 @@ argParameters = parser.parse_args()
 
 filePath = argParameters.inputFile
 gpuDevice = argParameters.gpuNumber
-with open("contactlib/lab2idx.json", "r") as jsonFile:
+with open("ESMC/lab2idx.json", "r") as jsonFile:
     lab2idx = json.load(jsonFile)
 idx2lab = dict(zip(lab2idx["super"].values(), lab2idx["super"].keys()))
 
@@ -40,7 +40,7 @@ newPath = filePath.split(".")[0] + "." + "json"
 fileList = glob(newPath)
 predictions, strId = [], []
 computeDevice = pt.device('cuda:0' if pt.cuda.is_available() else 'cpu')
-modelDirectory = "contactlib/model/prot_t5_xl_uniref50"
+modelDirectory = "ESMC/model/prot_t5_xl_uniref50"
 configModel = T5Config.from_pretrained(modelDirectory)
 tokenizer = T5Tokenizer.from_pretrained(modelDirectory)
 modelEncode = T5EncoderModel.from_pretrained(modelDirectory,
@@ -92,8 +92,9 @@ for fn in fileList:
     emd = getEmbedding(sequence, modelEncode, tokenizer)
     predictions.append(dict(coord=coordinates, hbond=hbond, emd=emd))
     strId.append(structId[:-5])
+    os.remove(fn)
 
-modelFileName = 'contactlib/model_sav/modelnew_model_augmentation-seqid3-run1.pth'
+modelFileName = 'ESMC/model_sav/modelnew_model_augmentation-seqid3-run1.pth'
 pt.cuda.set_device(int(gpuDevice))
 modelAugment = new_model_augmentation(depth=3, width=1024, multitask=True).cuda()
 modelAugment.load_state_dict(pt.load(modelFileName))
