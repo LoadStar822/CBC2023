@@ -6,9 +6,9 @@ Desc:
 """
 
 import random
+
 import numpy as np
 import torch as pt
-import torch.nn.functional as F
 from scipy.spatial.distance import pdist
 from torch import nn
 from torch.autograd import Variable
@@ -111,9 +111,9 @@ class ESMC(BaseNet):
                                    nn.Linear(ndense, width), nn.LayerNorm(width), nn.ReLU())
         layer_encod = nn.TransformerEncoderLayer(width, nhead, dim_feedforward=ndense, dropout=0.1)
         self.encod = nn.TransformerEncoder(layer_encod, depth)
-        # self.emd_attention = nn.Sequential(nn.Linear(width, width),
-        #                                    nn.Tanh(),
-        #                                    nn.Linear(width, 1))
+        self.emd_attention = nn.Sequential(nn.Linear(width, width),
+                                           nn.Tanh(),
+                                           nn.Linear(width, 1))
 
     def forward(self, x, mask, emd):
         mem = self.encod(self.embed(x).permute(1, 0, 2), src_key_padding_mask=mask).permute(1, 0, 2).masked_fill_(

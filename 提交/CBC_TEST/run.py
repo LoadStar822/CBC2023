@@ -49,7 +49,7 @@ model_lm.eval()  # disables dropout for deterministic results
 # modelEncode = T5EncoderModel.from_pretrained(modelDirectory,
 #                                              config=configModel,
 #                                              ignore_mismatched_sizes=True).to(computeDevice)
-emd_length = 7560
+emd_length = 7680
 
 
 def getEmbedding(sequence):
@@ -104,7 +104,7 @@ try:
 except Exception as e:
     print(f"An error occurred: {e}")
 try:
-    modelFileName = 'ESMC/model_sav/modelnew_model_augmentation-seqid3-run1.pth'
+    modelFileName = 'ESMC/model_sav/modelnew_model_augmentation-seqid3_7680-run1.pth'
     pt.cuda.set_device(int(gpuDevice))
     modelAugment = ESMC(depth=3, width=1024, emd_length=emd_length, multitask=True).cuda()
     modelAugment.load_state_dict(pt.load(modelFileName))

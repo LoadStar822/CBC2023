@@ -5,3 +5,4 @@ scipy==1.11.1
 torch==2.0.1
 transformers==4.24.0
 sentencepiece==0.1.99
+fair-esm==2.0.0
