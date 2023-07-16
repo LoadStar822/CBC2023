@@ -46,7 +46,7 @@ if emd_length == 7680:
     batch_converter = alphabet.get_batch_converter()
     model_lm.eval()  # disables dropout for deterministic results
 elif emd_length == 6144:
-    model_path = "model/prot_t5_xl_uniref50"
+    model_path = "ESMC/model/prot_t5_xl_uniref50"
     model_config = T5Config.from_pretrained(model_path, output_hidden_states=True)
     tokenizer = T5Tokenizer.from_pretrained(model_path)
     model_lm = T5EncoderModel.from_pretrained(model_path, config=model_config).to(computeDevice)
