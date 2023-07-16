@@ -49,27 +49,30 @@ model_lm.eval()  # disables dropout for deterministic results
 # modelEncode = T5EncoderModel.from_pretrained(modelDirectory,
 #                                              config=configModel,
 #                                              ignore_mismatched_sizes=True).to(computeDevice)
-emd_length = 7680
+emd_length = 6144
 
 
 def getEmbedding(sequence):
-    sequences = [("protein1", sequence)]
-    batch_labels, batch_strs, batch_tokens = batch_converter(sequences)
-    batch_lens = (batch_tokens != alphabet.padding_idx).sum(1)
-    layers_of_interest = [12, 24, 36]
+    if emd_length == 7680:
+        sequences = [("protein1", sequence)]
+        batch_labels, batch_strs, batch_tokens = batch_converter(sequences)
+        batch_lens = (batch_tokens != alphabet.padding_idx).sum(1)
+        layers_of_interest = [12, 24, 36]
 
-    with pt.no_grad():
-        results = model_lm(batch_tokens, repr_layers=layers_of_interest, return_contacts=True)
+        with pt.no_grad():
+            results = model_lm(batch_tokens, repr_layers=layers_of_interest, return_contacts=True)
 
-    sequence_representations = []
-    for i, tokens_len in enumerate(batch_lens):
-        layer_representations = []
-        for layer in layers_of_interest:
-            token_representations = results["representations"][layer]
-            layer_representations.append(token_representations[i, 1: tokens_len - 1])
-        sequence_representations.append(pt.cat(layer_representations, dim=-1))
+        sequence_representations = []
+        for i, tokens_len in enumerate(batch_lens):
+            layer_representations = []
+            for layer in layers_of_interest:
+                token_representations = results["representations"][layer]
+                layer_representations.append(token_representations[i, 1: tokens_len - 1])
+            sequence_representations.append(pt.cat(layer_representations, dim=-1))
 
-    return sequence_representations[0].mean(0)
+        return sequence_representations[0].mean(0)
+    elif emd_length == 6144:
+        return
 
 
 try:
@@ -104,7 +107,7 @@ try:
 except Exception as e:
     print(f"An error occurred: {e}")
 try:
-    modelFileName = 'ESMC/model_sav/modelnew_model_augmentation-seqid3_7680-run1.pth'
+    modelFileName = 'ESMC/model_sav/6144维度 96 95 95.pth'
     pt.cuda.set_device(int(gpuDevice))
     modelAugment = ESMC(depth=3, width=1024, emd_length=emd_length, multitask=True).cuda()
     modelAugment.load_state_dict(pt.load(modelFileName))

@@ -17,8 +17,8 @@ def process_file(path):
     fn_ent = path
 
     dssp_path = path.replace('.ent', '.dssp')
-    # os.system(f'ESMC/bin/mkdssp {fn_ent} {dssp_path}')
-    os.system(f'/code/dssp/build/mkdssp {fn_ent} {dssp_path}')
+    os.system(f'ESMC/bin/mkdssp {fn_ent} {dssp_path}')
+    # os.system(f'/code/dssp/build/mkdssp {fn_ent} {dssp_path}')
 
     if not os.path.isfile(dssp_path):
         return
