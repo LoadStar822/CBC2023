@@ -9,11 +9,11 @@ import json
 import os
 import warnings
 from glob import glob
-
+import re
 # pip install fair-esm
 import esm
 from transformers.utils import logging
-
+from transformers import T5EncoderModel, T5Tokenizer, T5Config
 from ESMC.bin.scope import process_file
 from ESMC.data import *
 
@@ -36,20 +36,28 @@ logging.set_verbosity_error()
 warnings.filterwarnings('ignore')
 
 newPath = filePath.split(".")[0] + "." + "json"
-
 fileList = glob(newPath)
 predictions, strId = [], []
 computeDevice = pt.device('cuda:0' if pt.cuda.is_available() else 'cpu')
-model_path = "ESMC/model/esm2_t36_3B_UR50D.pt"
-model_lm, alphabet = esm.pretrained.load_model_and_alphabet_local(model_path)
-batch_converter = alphabet.get_batch_converter()
-model_lm.eval()  # disables dropout for deterministic results
+emd_length = 6144
+if emd_length == 7680:
+    model_path = "ESMC/model/esm2_t36_3B_UR50D.pt"
+    model_lm, alphabet = esm.pretrained.load_model_and_alphabet_local(model_path)
+    batch_converter = alphabet.get_batch_converter()
+    model_lm.eval()  # disables dropout for deterministic results
+elif emd_length == 6144:
+    model_path = "model/prot_t5_xl_uniref50"
+    model_config = T5Config.from_pretrained(model_path, output_hidden_states=True)
+    tokenizer = T5Tokenizer.from_pretrained(model_path)
+    model_lm = T5EncoderModel.from_pretrained(model_path, config=model_config).to(computeDevice)
+    model_lm.full() if computeDevice=='cpu' else model_lm.half()
+
 # configModel = T5Config.from_pretrained(modelDirectory)
 # tokenizer = T5Tokenizer.from_pretrained(modelDirectory)
 # modelEncode = T5EncoderModel.from_pretrained(modelDirectory,
 #                                              config=configModel,
 #                                              ignore_mismatched_sizes=True).to(computeDevice)
-emd_length = 6144
+
 
 
 def getEmbedding(sequence):
@@ -72,7 +80,22 @@ def getEmbedding(sequence):
 
         return sequence_representations[0].mean(0)
     elif emd_length == 6144:
-        return
+        l = len(sequence)
+        seq = [sequence]
+        seq = [" ".join(list(re.sub(r"[UZOB]", "X", sequence))) for sequence in seq]
+
+        ids = tokenizer.batch_encode_plus(seq, add_special_tokens=True, padding="longest")
+
+        input_ids = pt.tensor(ids['input_ids']).to(computeDevice)
+        attention_mask = pt.tensor(ids['attention_mask']).to(computeDevice)
+        layers = [0, 5, 10, 15, 20, 24]
+        with pt.no_grad():
+            embedding_rpr = model_lm(input_ids=input_ids, attention_mask=attention_mask)
+        emd = []
+        for layer in layers:
+            emd.append(embedding_rpr.hidden_states[layer][0, :l].mean(dim=0))
+        emd = pt.cat(emd, dim=-1)
+        return emd
 
 
 try:
